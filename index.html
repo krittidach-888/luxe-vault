@@ -387,18 +387,19 @@ async function callAPI(baseUrl, action, type, extra){
   return res.json();
 }
 
-// safeEncode รองรับภาษาไทยและอักขระพิเศษทุกชนิด
-function safeEncode(obj) {
-  try {
-    return encodeURIComponent(unescape(encodeURIComponent(JSON.stringify(obj))));
-  } catch(e) {
-    return encodeURIComponent(JSON.stringify(obj));
-  }
-}
 const apiGet = (type) => callAPI(API, 'getAll', type, '');
-const apiAdd = (type, data) => callAPI(API, 'add', type, `data=${safeEncode(data)}`);
-const apiUpd = (type, id, data) => callAPI(API, 'update', type, `id=${id}&data=${safeEncode(data)}`);
-const apiDel = (type, id) => callAPI(API, 'delete', type, `id=${id}`);
+const apiAdd = (type, data) => callAPI(API, 'add', type, 'data=' + b64(data));
+const apiUpd = (type, id, data) => callAPI(API, 'update', type, 'id=' + id + '&data=' + b64(data));
+const apiDel = (type, id) => callAPI(API, 'delete', type, 'id=' + id);
+
+// encode base64 รองรับภาษาไทยและ Unicode ทุกตัว
+function b64(obj) {
+  const str = JSON.stringify(obj);
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return encodeURIComponent(btoa(bin));
+}
 
 // ============================================================
 // SYNC
