@@ -387,9 +387,17 @@ async function callAPI(baseUrl, action, type, extra){
   return res.json();
 }
 
+// safeEncode รองรับภาษาไทยและอักขระพิเศษทุกชนิด
+function safeEncode(obj) {
+  try {
+    return encodeURIComponent(unescape(encodeURIComponent(JSON.stringify(obj))));
+  } catch(e) {
+    return encodeURIComponent(JSON.stringify(obj));
+  }
+}
 const apiGet = (type) => callAPI(API, 'getAll', type, '');
-const apiAdd = (type, data) => callAPI(API, 'add', type, `data=${encodeURIComponent(JSON.stringify(data))}`);
-const apiUpd = (type, id, data) => callAPI(API, 'update', type, `id=${id}&data=${encodeURIComponent(JSON.stringify(data))}`);
+const apiAdd = (type, data) => callAPI(API, 'add', type, `data=${safeEncode(data)}`);
+const apiUpd = (type, id, data) => callAPI(API, 'update', type, `id=${id}&data=${safeEncode(data)}`);
 const apiDel = (type, id) => callAPI(API, 'delete', type, `id=${id}`);
 
 // ============================================================
