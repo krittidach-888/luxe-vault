@@ -312,7 +312,7 @@ tbody tr:hover td{background:var(--gds);}
   <div class="pt"><h1>สต็อกสินค้า</h1><span class="cnt" id="ct-stock">-</span></div>
   <div class="tb">
     <div class="tbl">
-      <input type="text" class="sb" placeholder="🔍 ชื่อ, โค้ด, Brand..." oninput="renderStock()">
+      <input type="text" class="sb" placeholder="🔍 โค้ด YBN, ชื่อ, Brand, สี..." oninput="renderStock()">
       <select style="width:130px" onchange="renderStock()" id="fb"><option value="">ทุก Brand</option></select>
       <select style="width:115px" onchange="renderStock()" id="fst">
         <option value="">ทุกสถานะ</option>
@@ -333,7 +333,7 @@ tbody tr:hover td{background:var(--gds);}
 <div id="s-buy" class="sec">
   <div class="pt"><h1>ซื้อเข้า</h1><span class="cnt" id="ct-buy">-</span></div>
   <div class="tb">
-    <input type="text" class="sb" placeholder="🔍 ค้นหา..." oninput="renderBuy()">
+    <input type="text" class="sb" placeholder="🔍 โค้ด, ชื่อ, Brand, แหล่งซื้อ..." oninput="renderBuy()">
     <div style="display:flex;gap:8px">
       <button class="btn bgh" onclick="exportExcel('buy')">📤 Export</button>
       <button class="btn bg" onclick="openBuy(null)">+ บันทึกซื้อเข้า</button>
@@ -347,7 +347,7 @@ tbody tr:hover td{background:var(--gds);}
   <div class="pt"><h1>ขายออก</h1><span class="cnt" id="ct-sell">-</span></div>
   <div class="tb">
     <div class="tbl">
-      <input type="text" class="sb" placeholder="🔍 ค้นหา..." oninput="renderSell()">
+      <input type="text" class="sb" id="sell-search" placeholder="🔍 โค้ด, ชื่อ, Brand, ลูกค้า..." oninput="renderSell()">
       <select style="width:130px" onchange="renderSell()" id="fch">
         <option value="">ทุกช่องทาง</option>
         <option>Live Boom</option><option>Luxsy</option><option>Whosale</option>
@@ -800,7 +800,7 @@ function renderStock(){
 
 function renderBuy(){
   const q=(document.querySelector('#s-buy .sb')||{value:''}).value.toLowerCase();
-  let f=items;if(q)f=f.filter(i=>(i.name+i.brand+i.itemCode+'').toLowerCase().includes(q));
+  let f=items;if(q)f=f.filter(i=>(i.name+i.brand+i.itemCode+i.source+i.color+i.serial+'').toLowerCase().includes(q));
   document.getElementById('ct-buy').textContent=f.length+' รายการ';
   if(!f.length){document.getElementById('t-buy').innerHTML=`<div class="empty"><div class="ei">🛒</div><p>ยังไม่มีรายการ</p></div>`;return;}
   const s=[...f].sort((a,b)=>Number(b.createdAt)-Number(a.createdAt));
@@ -938,10 +938,11 @@ async function saveSell(){
   btn.disabled=false;btn.textContent='💾 บันทึก';
 }
 function renderSell(){
-  const q=(document.querySelector('#s-sell .sb')||{value:''}).value.toLowerCase(),fch2=document.getElementById('fch').value;
-  let f=sells;if(q)f=f.filter(s=>(s.itemName+s.itemBrand+s.customerName+s.itemCode+'').toLowerCase().includes(q));if(fch2)f=f.filter(s=>s.channel===fch2);
+  const sellSb=document.getElementById('sell-search')||document.querySelector('#s-sell .sb')||{value:''};
+  const q=sellSb.value.toLowerCase(),fch2=document.getElementById('fch').value;
+  let f=sells;if(q)f=f.filter(s=>(s.itemName+s.itemBrand+s.customerName+s.itemCode+s.channel+s.sellDate+s.note+'').toLowerCase().includes(q));if(fch2)f=f.filter(s=>s.channel===fch2);
   document.getElementById('ct-sell').textContent=f.length+' รายการ';
-  if(!f.length){document.getElementById('t-sell').innerHTML=`<div class="empty"><div class="ei">💳</div><p>ยังไม่มีรายการขาย</p></div>`;return;}
+  if(!f.length){document.getElementById('t-sell').innerHTML=`<div class="empty"><div class="ei">💳</div><p>${q?'ไม่พบรายการที่ค้นหา':'ยังไม่มีรายการขาย'}</p></div>`;return;}
   const s=[...f].sort((a,b)=>Number(b.createdAt)-Number(a.createdAt));
   document.getElementById('t-sell').innerHTML=`<table><thead><tr><th>วันที่ขาย</th><th>โค้ด</th><th>Brand</th><th>สินค้า</th><th>ช่องทาง</th><th>ลูกค้า</th><th>ราคาขาย</th><th>ต้นทุน</th><th>กำไร</th><th>รับเงิน</th><th></th></tr></thead><tbody>${s.map(sl=>{const p=Number(sl.price||0)-Number(sl.cost||0);return`<tr>
     <td style="font-size:13px">${sl.sellDate||'-'}</td>
@@ -1038,7 +1039,7 @@ async function migrateAll(){
     const res = await callAPI(url, 'getAll', 'items', '');
     if(!res.ok) throw new Error(res.error||'โหลดข้อมูลไม่ได้');
     const allItems = res.data || [];
-    const needCode = allItems.filter(i => !i.itemCode || i.itemCode.trim() === '');
+    const needCode = allItems.filter(i => !i.itemCode || i.itemCode.trim() === '' || i.itemCode.trim() === '-');
     if(!needCode.length){ mMsg.style.color='var(--grn)'; mMsg.textContent='✅ สินค้าทุกชิ้นมีโค้ดครบแล้ว!'; return; }
     
     mMsg.textContent = `⏳ กำลังแปลง ${needCode.length} รายการ...`;
